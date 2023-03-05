@@ -60,6 +60,8 @@ const parseJwt = (token) => {
 
 
 window.addEventListener("DOMContentLoaded", () =>{
+  const objUrlParams=new URLSearchParams(window.location.search);
+  const page =objUrlParams.get("page") || 1;
   const token  = localStorage.getItem('token')
   console.log("token======>",token)
   const decodeToken = parseJwt(token)
@@ -69,12 +71,15 @@ window.addEventListener("DOMContentLoaded", () =>{
     showPremiumUserMessage()
     showLeaderboard()
   }
-  axios.get("http://localhost:5000/admin/get-expenses", { headers: {"Authorization" : token} })
+  axios.get(`http://localhost:5000/admin/get-expenses?page=${page}`, { headers: {"Authorization" : token} })
   .then((response)=>{
+    
     console.log(response);
     for(var i=0;i<response.data.allExpenses.length;i++){
       showNewUserOnScreen(response.data.allExpenses[i]);
     }
+    console.log(response.data);
+    showPagination(response.data);
   })
   .catch((err)=>{
     console.log(err);
@@ -97,6 +102,56 @@ function showNewUserOnScreen(user){
 }
 
   
+
+function showPagination({currentPage,hasNextPage,nextPage,hasPreviousPage,previousPage,lastPage}){
+  pagination.innerHTML='';
+  if(hasPreviousPage){
+    
+    const btn2=document.createElement('button')
+    btn2.className="btn btn-info"
+    btn2.style.margin="5px"
+    btn2.innerHTML=previousPage
+    btn2.addEventListener('click',()=> getProducts(previousPage))
+    pagination.appendChild(btn2)
+  }
+  const btn1=document.createElement('button')
+  btn1.className="btn btn-info"
+  btn1.style.margin="5px"
+  btn1.innerHTML=`<h3>${currentPage}</h3>`
+  btn1.addEventListener('click',()=> getProducts(currentPage))
+  pagination.appendChild(btn1)
+  if(hasNextPage){
+    
+    const btn3=document.createElement('button')
+    btn3.style.margin="5px"
+    btn3.className="btn btn-info"
+    btn3.innerHTML=nextPage
+    btn3.addEventListener('click',()=> getProducts(nextPage))
+    pagination.appendChild(btn3)
+  }
+}
+
+function getProducts(page){
+  const parentNode=document.getElementById('expense');
+  parentNode.innerHTML='';
+  const token  = localStorage.getItem('token')
+  axios.get(`http://localhost:5000/admin/get-expenses?page=${page}`, { headers: {"Authorization" : token} })
+  .then((response)=>{
+    
+    console.log(response);
+    for(var i=0;i<response.data.allExpenses.length;i++){
+      showNewUserOnScreen(response.data.allExpenses[i]);
+    }
+    showPagination(response.data);
+  })
+  .catch((err)=>{
+    console.log(err);
+  })
+}
+
+
+
+
 function editUserDetails(id,amount, Description, category){
     document.getElementById('amount').value = amount;
     document.getElementById('Description').value = Description;
@@ -204,6 +259,11 @@ document.getElementById('rzp-button1').onclick = async function (e) {
        showLeaderboard()
    },
 };
+
+
+
+
+
 const rzp1 = new Razorpay(options);
 rzp1.open();
 e.preventDefault();
